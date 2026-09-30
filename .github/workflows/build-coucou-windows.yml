@@ -1,0 +1,46 @@
+name: Build Coucou Windows
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build-coucou-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Coucou source
+        uses: actions/checkout@v4
+        with:
+          repository: Louis-CFM/coucou
+          ref: main
+          path: coucou
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: coucou/windows/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        working-directory: coucou/windows
+        run: npm ci
+
+      - name: Build Windows installer from source
+        working-directory: coucou/windows
+        run: npm run pack
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coucou-windows-installer
+          path: coucou/windows/release/*.exe
+          if-no-files-found: error
